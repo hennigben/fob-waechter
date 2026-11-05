@@ -1,0 +1,13 @@
+# Persoenliches, Lokales und Kopien der Seite gehoeren nie ins Projekt
+stand.json
+ereignisse.log
+meine-daten.json
+ntfy-kanal.txt
+bearbeitet.txt
+erledigt.log
+fehler.log
+.sperre
+*.tmp
+*.plist
+__pycache__/
+.DS_Store

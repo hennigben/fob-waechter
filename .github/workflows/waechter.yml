@@ -1,0 +1,59 @@
+name: Waechter
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: waechter
+  cancel-in-progress: false
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TZ: Europe/Berlin
+    steps:
+      - uses: actions/checkout@v5
+
+      # Der Stand liegt nur im internen Zwischenspeicher, nicht im Projekt.
+      - name: Stand laden
+        uses: actions/cache/restore@v4
+        with:
+          path: stand.json
+          key: stand-${{ github.run_id }}
+          restore-keys: stand-
+
+      - name: Pruefen
+        id: pruefen
+        env:
+          NTFY_KANAL: ${{ secrets.NTFY_KANAL }}
+        run: |
+          vorher=$(sha256sum stand.json 2>/dev/null || true)
+          python3 -I waechter.py
+          nachher=$(sha256sum stand.json 2>/dev/null || true)
+          if [ "$vorher" != "$nachher" ]; then echo "geaendert=ja" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Stand speichern
+        if: steps.pruefen.outputs.geaendert == 'ja'
+        uses: actions/cache/save@v4
+        with:
+          path: stand.json
+          key: stand-${{ github.run_id }}
+
+      # Ein Eintrag am Tag haelt den Zeitplan aktiv (GitHub pausiert ihn sonst nach 60 Tagen).
+      - name: Lebenszeichen
+        run: |
+          date +%F > lebenszeichen.txt
+          git config user.name "fob-waechter"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lebenszeichen.txt
+          if ! git diff --cached --quiet; then
+            git commit -q -m "Lebenszeichen $(date +%F)"
+            git push -q
+          fi
