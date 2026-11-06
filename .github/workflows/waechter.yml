@@ -55,5 +55,6 @@ jobs:
           git add lebenszeichen.txt
           if ! git diff --cached --quiet; then
             git commit -q -m "Lebenszeichen $(date +%F)"
-            git push -q
+            # Nie den Lauf scheitern lassen: Der Alarm ist zu diesem Zeitpunkt schon raus.
+            for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true
           fi
