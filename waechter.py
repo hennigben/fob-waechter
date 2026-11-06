@@ -8,10 +8,10 @@ Seiten geholt. Aenderungen landen als Zeile in ereignisse.log
 (Umgebungsvariable NTFY_KANAL oder Datei ntfy-kanal.txt). Auf dem Mac erzeugt
 WICHTIG zusaetzlich eine Mac-Mitteilung.
 
-Laeuft alle 5 Minuten als GitHub-Action (hennigben/fob-waechter) und auf dem Mac
-mit --kein-push, damit Claude dort reagieren kann, ohne doppelt zu alarmieren.
+Laeuft als GitHub-Action (hennigben/fob-waechter; geplant alle 5 Minuten, GitHub
+startet sie aber oft nur etwa stuendlich) und auf dem Mac jede Minute, solange er wach
+ist. Beide alarmieren selbst; doppelte Pushs sind der Preis fuer schnelle Alarme.
 """
-import calendar
 import hashlib
 import html
 import json
@@ -223,22 +223,6 @@ def klickziel(texte):
     return START
 
 
-def cloud_aktiv():
-    """True, wenn der GitHub-Waechter in den letzten 15 Minuten planmaessig lief."""
-    url = "https://api.github.com/repos/hennigben/fob-waechter/actions/runs?event=schedule&per_page=1"
-    req = urllib.request.Request(url, headers={"User-Agent": "fob-waechter",
-                                               "Accept": "application/vnd.github+json"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            laeufe = json.load(r).get("workflow_runs", [])
-        if not laeufe:
-            return False
-        zeit = calendar.timegm(time.strptime(laeufe[0]["created_at"], "%Y-%m-%dT%H:%M:%SZ"))
-        return time.time() - zeit < 15 * 60
-    except Exception:
-        return False
-
-
 def melden(ereignisse):
     jetzt = time.strftime("%Y-%m-%d %H:%M:%S")
     with open(LOG, "a", encoding="utf-8") as f:
@@ -246,8 +230,7 @@ def melden(ereignisse):
             f.write(f"{jetzt} {stufe} {text}\n")
     wichtig = [t for s, t in ereignisse if s == "WICHTIG"]
     info = [t for s, t in ereignisse if s == "INFO"]
-    # --kein-push: nur pushen, wenn der GitHub-Waechter gerade nicht laeuft
-    if "--still" not in sys.argv and ("--kein-push" not in sys.argv or not cloud_aktiv()):
+    if "--still" not in sys.argv and "--kein-push" not in sys.argv:
         if wichtig:
             push("Fall Out Boy: NEU auf falloutboy.com!", "\n".join(wichtig + info), 5,
                  klickziel(wichtig), ["rotating_light"])
