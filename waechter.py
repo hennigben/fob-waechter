@@ -36,6 +36,7 @@ HOST = "www.falloutboy.com"
 START = f"https://{HOST}/"
 SITEMAP = f"https://{HOST}/sitemap.xml"
 NEBENSEITEN = ["https://twoquartersarcade.com/"]  # nur Titel und Beschreibung
+MALL = "https://twilighttownmall.falloutboy.com/"  # Startseite der Mall, jede Minute
 VOLL_ALLE = 600
 MAX_SEITEN = 40
 STICHWORTE = re.compile(
@@ -301,6 +302,26 @@ def main():
             if name not in verz:
                 ereignisse.append(("INFO", f"Laden verschwunden: {name}"))
     stand["verzeichnis"] = verz
+
+    # Die Mall liegt seit 09.11.2026 auf einer eigenen Subdomain
+    _, mall_roh = sicher_holen(MALL)
+    if mall_roh is not None:
+        m_info = auswerten(MALL, mall_roh)
+        m_verz = {n: (urljoin(MALL, h) if h else h) for n, h in verzeichnis(mall_roh).items()}
+        m_neu = {"verzeichnis": m_verz, "links": m_info["extern"], "formulare": m_info["formulare"],
+                 "drops": m_info["drops"], "sms": m_info["sms"]}
+        m_alt = stand.get("mall")
+        if m_alt is not None:
+            for name, href in m_verz.items():
+                if name not in m_alt["verzeichnis"]:
+                    ereignisse.append(("WICHTIG", f"Mall: neuer Laden im Verzeichnis: {name}" + (f" => {href}" if href else "")))
+                elif href and not m_alt["verzeichnis"].get(name):
+                    ereignisse.append(("WICHTIG", f"Mall: Laden eroeffnet: {name} => {href}"))
+            for schluessel, wort in (("links", "Link"), ("formulare", "Formular"), ("drops", "Laylo-Drop"), ("sms", "SMS-Stichwort")):
+                neu = [x for x in m_neu[schluessel] if x not in m_alt.get(schluessel, [])]
+                if neu:
+                    ereignisse.append(("WICHTIG", f"Mall: neu ({wort}): {kurz(', '.join(neu), 300)}"))
+        stand["mall"] = m_neu
 
     if sm_roh is not None:
         if not erster_lauf:
