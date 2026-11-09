@@ -1,10 +1,10 @@
 name: Erinnerung
 
-# Einmalige Erinnerung an "Just Out of Reach" (Mo 09.11.2026, 10:30 Uhr US-Zeit).
-# GitHub startet geplante Laeufe oft verspaetet, deshalb schon um 14:45 Uhr deutscher Zeit.
+# Einmalige Erinnerung an den EU-Presale (Mi 11.11.2026, 12:00 Uhr deutscher Zeit).
+# GitHub startet geplante Laeufe oft verspaetet, deshalb schon um 10:30 Uhr deutscher Zeit.
 on:
   schedule:
-    - cron: "45 13 9 11 *"
+    - cron: "30 9 11 11 *"
 
 jobs:
   erinnern:
@@ -16,4 +16,4 @@ jobs:
           NTFY_KANAL: ${{ secrets.NTFY_KANAL }}
         run: |
           [ "$(date -u +%Y)" = "2026" ] || exit 0
-          curl -s -H "Content-Type: application/json" -d "{\"topic\":\"$NTFY_KANAL\",\"title\":\"Heute: Fall Out Boy - Just Out of Reach\",\"message\":\"Laut deinem Ticket startet es heute um 10:30 Uhr US-Zeit: 16:30 Uhr bei uns (Ostkueste) oder 17:30 Uhr (Chicago). Halte falloutboy.com und deine SMS im Blick.\",\"priority\":5,\"tags\":[\"tickets\"],\"click\":\"https://www.falloutboy.com/\"}" https://ntfy.sh/ > /dev/null
+          curl -s -H "Content-Type: application/json" -d "{\"topic\":\"$NTFY_KANAL\",\"title\":\"Heute 12:00: Presale Fall Out Boy Berlin\",\"message\":\"Laptop aufklappen, ans Netz und an den Strom, Claude-App offen lassen. Presale-Passwort bereithalten. Ab 11:45 parallel am Handy in die Warteschlange.\",\"priority\":5,\"tags\":[\"tickets\"]}" https://ntfy.sh/ > /dev/null
